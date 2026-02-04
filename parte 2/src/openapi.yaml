@@ -1,0 +1,262 @@
+openapi: 3.0.0
+info:
+  title: Festival Manager API
+  description: API para gestão de Festivais de Música (Exame DW1)
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Servidor Local de Desenvolvimento
+
+paths:
+
+  /artistas:
+    get:
+      summary: Listar todos os artistas
+      description: Retorna uma lista de artistas. Suporta filtros por género.
+      parameters:
+        - in: query
+          name: genero
+          schema:
+            type: string
+          description: Filtra artistas pelo estilo musical (Ex. Rock, Jazz)
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Artista'
+    post:
+      summary: Criar novo artista
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NovoArtista'
+      responses:
+        '201':
+          description: Criado com sucesso
+
+
+  /palcos:
+    get:
+      summary: Listar palcos
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Palco'
+    post:
+      summary: Criar palco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NovoPalco'
+      responses:
+        '201':
+          description: Criado
+
+  # --- Relação 1:N ---
+  /concertos:
+    get:
+      summary: Listar concertos
+      description: Permite filtrar por palco (Relação 1:N)
+      parameters:
+        - in: query
+          name: palco_id
+          schema:
+            type: integer
+          description: ID do Palco para filtrar os concertos
+      responses:
+        '200':
+          description: Lista de concertos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Concerto'
+    post:
+      summary: Agendar concerto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NovoConcerto'
+      responses:
+        '201':
+          description: Agendado
+
+  /bilhetes:
+    get:
+      summary: Listar bilhetes vendidos
+      responses:
+        '200':
+          description: Sucesso
+    post:
+      summary: Vender bilhete
+      responses:
+        '201':
+          description: Vendido
+
+  # --- RELAÇÃO M:N ---
+  /concertos/{id}/artistas:
+  get:
+      summary: Listar artistas de um concerto (Alinhamento)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de artistas do concerto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/Artista'
+                    - type: object
+                      properties:
+                        ordem_atuacao:
+                          type: integer
+      post: 
+      summary: Adicionar artista ao alinhamento (M:N)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                artista_id:
+                  type: integer
+                ordem:
+                  type: integer
+      responses:
+        '201':
+          description: Artista adicionado ao concerto     
+  /artistas/{id}:
+    put:
+      summary: Atualizar dados de um artista
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NovoArtista'
+      responses:
+        '200':
+          description: Artista atualizado
+    delete:
+      summary: Apagar um artista
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Artista eliminado
+
+components:
+  schemas:
+    Artista:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        genero:
+          type: string
+        cachet:
+          type: number
+    
+    Palco:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        capacidade:
+          type: integer
+
+    Concerto:
+      type: object
+      properties:
+        id:
+          type: integer
+        data_hora:
+          type: string
+          format: date-time
+        palco_id:
+          type: integer
+
+    NovoArtista:
+      type: object
+      required:
+        - nome
+      properties:
+        nome:
+          type: string
+        genero:
+          type: string
+        pais_origem:
+          type: string
+        cachet: 
+          type: number
+
+    NovoPalco:
+      type: object
+      required:
+        - nome
+        - capacidade
+      properties:
+        nome:
+          type: string
+        capacidade:
+          type: integer
+        localizacao:
+          type: string
+
+    NovoConcerto:
+      type: object
+      required:
+        - data_hora
+        - palco_id
+      properties:
+        data_hora:
+          type: string
+          format: date-time
+        duracao_minutos:
+          type: integer
+        palco_id:
+          type: integer

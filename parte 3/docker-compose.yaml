@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db_parte3:
+    image: mysql:8.0
+    container_name: festival_db_parte3
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: festival_loopback
+      MYSQL_USER: festival_admin
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data_parte3:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  api:
+    build: ./festival-api
+    container_name: festival_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db_parte3
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_DATABASE: festival_loopback
+    depends_on:
+      - db_parte3
+
+  admin:
+    build: ./festival-admin
+    container_name: festival-admin
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  db_data_parte3:
